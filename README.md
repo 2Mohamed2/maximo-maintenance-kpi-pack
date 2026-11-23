@@ -4,7 +4,8 @@
 
 One BIRT report for IBM Maximo 7.6 (and Maximo Manage) that measures the maintenance and reliability KPIs of the
 **Society for Maintenance & Reliability Professionals (SMRP) Best Practices metrics** from Maximo's own data:
-work orders, assets, asset downtime, labour, inventory and storerooms. It covers all five SMRP pillars. It is
+work orders, assets, asset downtime, labour, inventory and storerooms. It covers all five SMRP pillars, and maps every KPI to its group and area in the European standard
+**EN 15341:2019+A1:2022** (Maintenance Key Performance Indicators). It is
 read-only and runs on **SQL Server, Oracle and Db2** from the same file.
 
 You import only `maximo_smrp_kpi.rptdesign` into Maximo. `smrp_sql.js` is the SQL source that `build.py` builds into
@@ -15,7 +16,7 @@ the report: it is kept as its own file so the statements can be tested on each d
 | Section | Content |
 |---|---|
 | Header | Period, site, Maximo version, database. Eight headline tiles: maintenance cost / RAV, PM & PdM compliance, planned work, emergency work, schedule compliance, MTBF, MTTR, planned backlog |
-| Scorecard | 40 KPIs by SMRP pillar, each with its value, a common reference value, a status (On target, Watch, Info, No data, Outside Maximo) and how it is measured in Maximo |
+| Scorecard | 42 KPIs by SMRP pillar, each with its EN 15341 area, its value, a common reference value, a status (On target, Watch, Info, No data, Outside Maximo) and how it is measured in Maximo |
 | 1 Business & management | Cost by work category: labour, materials, services, tools, share of hours and cost, planned share. Monthly hours by category (chart) |
 | 2 Equipment reliability | Bad actors (top 12 assets by failures, with MTBF, MTTR, cost, failure class) and failure classes |
 | 3 Work management | Work types, KPIs by site (PM and schedule compliance, emergency share, backlog), open work by age and status, the most overdue preventive work orders |
@@ -24,10 +25,10 @@ the report: it is kept as its own file so the statements can be tested on each d
 
 ### KPIs
 
-- **Business & management:** replacement asset value (RAV), total maintenance cost, maintenance cost as % of RAV, RAV per craft worker, stores value as % of RAV, and maintenance unit cost (outside Maximo).
+- **Business & management:** replacement asset value (RAV), total maintenance cost, maintenance cost as % of RAV, RAV per craft worker, stores value as % of RAV, average age of operating assets, and maintenance unit cost (outside Maximo).
 - **Manufacturing process reliability:** OEE and TEEP (outside Maximo: they need production data).
 - **Equipment reliability:** criticality coverage, total downtime, unscheduled downtime %, MTBF, MTTR, failures with a failure class.
-- **Organization & leadership:** rework (repeat failures within 30 days), contractor cost %, overtime %.
+- **Organization & leadership:** rework (repeat failures within 30 days), contractor cost %, overtime %, craft workers with a current qualification.
 - **Work management:**
   - **Hours and cost mix:** preventive, predictive, corrective and emergency hours %; preventive and corrective cost %.
   - **Planning:** planned work %; actual-to-estimate hours and cost.
@@ -62,6 +63,7 @@ No database objects and no DBA rights are needed: every statement is a SELECT th
 - Statuses are read through their synonyms (SYNONYMDOMAIN), so renamed statuses count correctly.
 - Common reference values are industry rules of thumb often quoted with the SMRP metrics, not SMRP targets. Agree targets locally and watch the trend.
 - SMRP metric numbering differs between editions, so the report uses the metric names.
+- EN 15341 column: the group (PHA physical asset, HSE, M management, P people, E engineering, O&S organization and support, A&S administration and supply, ICT) and area with its index range. An exact code is shown only where it is certain (PHA6, total equipment effectiveness or OEE). EN and SMRP definitions can differ in detail: check the standard before reporting a value as an EN 15341 KPI.
 - Tested inside Maximo 7.6 on SQL Server, Oracle and Db2.
 
 ## Build

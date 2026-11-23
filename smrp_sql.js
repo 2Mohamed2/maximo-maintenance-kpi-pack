@@ -100,7 +100,9 @@ function smrpSql(db, p) {
   // ---- one row: every number the scorecard needs
   var A = "select " + sumIf("sa.maxvalue = 'OPERATING'", nz("a.replacecost")) + " rav, " +
           cntIf("sa.maxvalue = 'OPERATING'") + " nassets, " +
-          cntIf("sa.maxvalue = 'OPERATING' and a.priority is not null") + " ncrit " +
+          cntIf("sa.maxvalue = 'OPERATING' and a.priority is not null") + " ncrit, " +
+          sumIf("sa.maxvalue = 'OPERATING' and a.installdate is not null and a.installdate < " + E, dys("a.installdate", E)) + " age_days, " +
+          cntIf("sa.maxvalue = 'OPERATING' and a.installdate is not null and a.installdate < " + E) + " n_dated " +
           "from asset a join synonymdomain sa on sa.domainid = 'LOCASSETSTATUS' and sa.value = a.status where 1 = 1" + siteF("a");
   var L = "select count(*) labor_n from labor l join synonymdomain sl on sl.domainid = 'LABORSTATUS' and sl.value = l.status " +
           "where sl.maxvalue = 'ACTIVE'";
@@ -176,15 +178,21 @@ function smrpSql(db, p) {
             "and m.storeloc is not null and m.transdate >= " + S + " and m.transdate < " + E + siteF("m");
   var CNT = "select (select count(*) from invbalances b where b.physcntdate >= " + S + " and b.physcntdate < " + E + siteF("b") + ") counted, " +
             "(select count(*) from invtrans t where t.transtype = 'PCOUNTADJ' and t.transdate >= " + S + " and t.transdate < " + E + siteF("t") + ") adjusted" + DUAL;
-  var parts = [A, L, D, PM, PMO, PMF, SCH, F, R, DT, O, OT, INV, ISS, CNT];
+  // people competence: active craft workers holding a qualification that has not ended
+  var QL = "select count(distinct q.laborcode) qual_labor from laborqual q join labor l on l.laborcode = q.laborcode and l.orgid = q.orgid " +
+           "join synonymdomain sl on sl.domainid = 'LABORSTATUS' and sl.value = l.status where sl.maxvalue = 'ACTIVE' and (q.enddate is null or q.enddate >= " + E + ")";
+  var parts = [A, L, D, PM, PMO, PMF, SCH, F, R, DT, O, OT, INV, ISS, CNT, QL];
   var sql = "select * from ";
   for (var i = 0; i < parts.length; i++) sql += (i ? " cross join " : "") + "(" + parts[i] + ") q" + i;
   o.kpiSql = mark(sql);
 
   // ---- scorecard rows: one per KPI; the values come from the kpiSql row (see kpiDef in the report)
+  // shown in pillar order: 41 (asset age) after the business KPIs, 42 (qualifications) after the organization KPIs
+  var ORDER = [1, 2, 3, 4, 5, 41, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 42];
+  for (var k = 18; k <= 40; k++) ORDER.push(k);
   var rows = [];
-  for (var k = 1; k <= 40; k++) rows.push("select " + k + " sk" + DUAL);
-  o.scoreSql = mark("select sk from (" + rows.join(" union all ") + ") z order by sk");
+  for (var i = 0; i < ORDER.length && ORDER[i] <= (p.nkpi || 42); i++) rows.push("select " + ORDER[i] + " sk, " + i + " ord" + DUAL);
+  o.scoreSql = mark("select sk from (" + rows.join(" union all ") + ") z order by ord");
 
   // ---- hours and work orders per month and category (completed work)
   var M = ym("w.actfinish");
